@@ -54,11 +54,13 @@ pip install tf-keras
 ```
 
 **4. Create `.env` file**
+```
 SECRET_KEY=your-secret-key
 DATABASE_URL=sqlite:///virtual_pet.db
 LLM_API_KEY=your-groq-api-key
 LLM_MODEL=llama-3.1-8b-instant
 LLM_PROVIDER=groq
+```
 
 **5. Run**
 ```bash
@@ -70,20 +72,33 @@ Visit `http://127.0.0.1:5000` — register with your face, then meet your pet.
 ---
 
 ## 📁 Project Structure
+```
 virtual-pet/
-├── app/
-│   ├── auth/          # Face login, PIN fallback, registration
-│   ├── pet/           # FSM, LLM, routes, emotion detection
-│   ├── static/        # CSS, JS
-│   ├── templates/     # Jinja2 HTML templates
-│   ├── models.py      # SQLAlchemy models (User, Pet, ChatHistory)
-│   └── init.py    # App factory
-├── config.py          # Environment-based configuration
-├── run.py             # Entry point
-├── requirements.txt
-└── tests/
-└── test_fsm.py
 
+├── app/
+
+│   ├── auth/          # Face login, PIN fallback, registration
+
+│   ├── pet/           # FSM, LLM, routes, emotion detection
+
+│   ├── static/        # CSS, JS
+
+│   ├── templates/     # Jinja2 HTML templates
+
+│   ├── models.py      # SQLAlchemy models (User, Pet, ChatHistory)
+
+│   └── init.py    # App factory
+
+├── config.py          # Environment-based configuration
+
+├── run.py             # Entry point
+
+├── requirements.txt
+
+└── tests/
+
+└── test_fsm.py
+```
 ---
 
 ## 🧩 How It Works
