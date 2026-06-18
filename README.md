@@ -74,29 +74,17 @@ Visit `http://127.0.0.1:5000` — register with your face, then meet your pet.
 ## 📁 Project Structure
 ```
 virtual-pet/
-
 ├── app/
-
 │   ├── auth/          # Face login, PIN fallback, registration
-
 │   ├── pet/           # FSM, LLM, routes, emotion detection
-
 │   ├── static/        # CSS, JS
-
 │   ├── templates/     # Jinja2 HTML templates
-
 │   ├── models.py      # SQLAlchemy models (User, Pet, ChatHistory)
-
 │   └── init.py    # App factory
-
 ├── config.py          # Environment-based configuration
-
 ├── run.py             # Entry point
-
 ├── requirements.txt
-
 └── tests/
-
 └── test_fsm.py
 ```
 ---
