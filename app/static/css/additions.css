@@ -1,0 +1,138 @@
+/* ── XP bar in topbar ── */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1.5rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+.topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  justify-content: center;
+}
+.level-badge {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.xp-bar-wrap {
+  width: 140px;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #a89fff);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.xp-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── stats panel ── */
+.stats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+}
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.stat-label {
+  font-size: 0.78rem;
+  width: 72px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+.stat-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.stat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.hunger-fill { background: linear-gradient(90deg, #ff8844, #ffcc44); }
+.mood-fill   { background: linear-gradient(90deg, #44cc88, #88ffcc); }
+.energy-fill { background: linear-gradient(90deg, #6c63ff, #a89fff); }
+.stat-val {
+  font-size: 0.78rem;
+  width: 24px;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+/* cozy stats */
+body.theme-cozy .hunger-fill { background: linear-gradient(90deg, #e07050, #f0a878); }
+body.theme-cozy .mood-fill   { background: linear-gradient(90deg, #e898a8, #f8c8d0); }
+body.theme-cozy .energy-fill { background: linear-gradient(90deg, #c8a0d0, #e0c8f0); }
+
+/* ── level up toast ── */
+.levelup-toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: var(--accent);
+  color: #fff;
+  padding: 0.7rem 1.5rem;
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 999;
+}
+.levelup-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── cozy decorations ── */
+body.theme-cozy .stats-panel::before {
+  content: '🍬 Stats';
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+body.theme-cozy .activity-buttons::before {
+  content: '🎀 Activities';
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+body.theme-cozy .topbar {
+  background: linear-gradient(90deg, #fff0e8, #fde8f0);
+  border-bottom: 2px solid #f0d0bc;
+}
+body.theme-cozy .xp-bar-fill {
+  background: linear-gradient(90deg, #e8845a, #f0b89a);
+}
+body.theme-cozy .levelup-toast {
+  background: linear-gradient(90deg, #e8845a, #e898a8);
+}

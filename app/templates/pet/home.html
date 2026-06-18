@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% block title %}{{ pet.name }}{% endblock %}
+{% block content %}
+<div class="pet-layout" id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <span class="topbar-user">👤 {{ username }}</span>
+    <div class="topbar-center">
+      <span class="level-badge">Lv.{{ pet.level }}</span>
+      <div class="xp-bar-wrap" title="{{ xp_for_next }} XP to next level">
+        <div class="xp-bar-fill" id="xp-bar" style="width:{{ xp_progress }}%"></div>
+      </div>
+      <span class="xp-label">XP</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="theme-toggle-btn" id="theme-toggle-btn">
+        {% if theme == 'cozy' %}🌙 Normal{% else %}🌸 Cozy{% endif %}
+      </button>
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout →</a>
+    </div>
+  </div>
+
+  <div class="pet-main">
+
+    <!-- LEFT -->
+    <div class="left-panel">
+      <div class="cam-wrap small">
+        <video id="video" autoplay playsinline muted></video>
+      </div>
+      <div class="emotion-badge" id="emotion-badge">😐 neutral</div>
+      <p class="hint">Reads emotion every 10s</p>
+
+      <!-- stats -->
+      <div class="stats-panel">
+        <div class="stat-row">
+          <span class="stat-label">🍖 Hunger</span>
+          <div class="stat-bar"><div class="stat-fill hunger-fill" id="hunger-bar" style="width:{{ pet.hunger }}%"></div></div>
+          <span class="stat-val" id="hunger-val">{{ pet.hunger }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">😊 Mood</span>
+          <div class="stat-bar"><div class="stat-fill mood-fill" id="mood-bar" style="width:{{ pet.mood }}%"></div></div>
+          <span class="stat-val" id="mood-val">{{ pet.mood }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">⚡ Energy</span>
+          <div class="stat-bar"><div class="stat-fill energy-fill" id="energy-bar" style="width:{{ pet.energy }}%"></div></div>
+          <span class="stat-val" id="energy-val">{{ pet.energy }}</span>
+        </div>
+      </div>
+
+      <!-- activity buttons -->
+      <div class="activity-buttons">
+        <button class="act-btn feed-btn" id="feed-btn">🍖 Feed</button>
+        <button class="act-btn play-btn" id="play-btn">🎾 Play</button>
+        <button class="act-btn rest-btn" id="rest-btn">💤 Rest</button>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center-panel">
+      <div class="pet-name-wrap">
+        <span id="pet-name-display">{{ pet.name }}</span>
+        <button class="rename-btn" id="rename-btn">✏️</button>
+      </div>
+      <div class="sprite-wrap">
+        <div class="pet-body {{ pet.state }}" id="pet-sprite"></div>
+      </div>
+      <div class="state-badge" id="state-badge">{{ pet.state }}</div>
+      <div class="speech-bubble">
+        <span id="bubble-text">Hi {{ username }}! I'm so happy to see you! 🐾</span>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-panel">
+      <div class="chat-log" id="chat-log">
+        {% for msg in history %}
+          <div class="chat-msg {{ 'pet-msg' if msg.role == 'pet' else 'user-msg' }}">
+            {{ msg.message }}
+          </div>
+        {% else %}
+          <div class="chat-msg pet-msg">Hi {{ username }}! I'm {{ pet.name }} 🐾</div>
+        {% endfor %}
+      </div>
+      <div class="chat-input-wrap">
+        <input id="chat-input" type="text" placeholder="Talk to {{ pet.name }}..."/>
+        <button id="mic-btn">🎤</button>
+        <button id="send-btn">Send</button>
+      </div>
+      <p class="hint">🎤 mic · ⌨️ type</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- level up toast -->
+<div class="levelup-toast" id="levelup-toast">🎉 Level up! {{ pet.name }} is growing!</div>
+
+<script>
+let currentEmotion = 'neutral';
+let currentState = "{{ pet.state }}";
+let currentTheme = "{{ theme }}";
+
+if (currentTheme === 'cozy') document.body.classList.add('theme-cozy');
+
+const EMOTION_EMOJI = {
+  happy:'😄', sad:'😢', angry:'😠', surprise:'😲',
+  fear:'😨', disgust:'🤢', neutral:'😐'
+};
+
+// scroll chat to bottom on load
+const chatLog = document.getElementById('chat-log');
+chatLog.scrollTop = chatLog.scrollHeight;
+
+// webcam
+const video = document.getElementById('video');
+navigator.mediaDevices.getUserMedia({ video: true }).then(s => video.srcObject = s);
+
+// emotion detection every 10s
+const canvas = document.createElement('canvas');
+async function detectEmotion() {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const image = canvas.toDataURL('image/jpeg');
+  try {
+    const res = await fetch('/pet/emotion', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({image})
+    });
+    const data = await res.json();
+    currentEmotion = data.emotion;
+    currentState = data.pet_state;
+    document.getElementById('emotion-badge').textContent =
+      (EMOTION_EMOJI[currentEmotion] || '😐') + ' ' + currentEmotion;
+    updatePetSprite(currentState);
+    document.getElementById('state-badge').textContent = currentState;
+    if (data.hunger !== undefined) updateStats(data.hunger, null, data.energy);
+  } catch(e) {}
+}
+setInterval(detectEmotion, 10000);
+
+// sprite
+function updatePetSprite(state) {
+  const sprite = document.getElementById('pet-sprite');
+  sprite.className = 'pet-body ' + state;
+}
+
+// stats bars
+function updateStats(hunger, mood, energy) {
+  if (hunger !== null && hunger !== undefined) {
+    document.getElementById('hunger-bar').style.width = hunger + '%';
+    document.getElementById('hunger-val').textContent = hunger;
+  }
+  if (mood !== null && mood !== undefined) {
+    document.getElementById('mood-bar').style.width = mood + '%';
+    document.getElementById('mood-val').textContent = mood;
+  }
+  if (energy !== null && energy !== undefined) {
+    document.getElementById('energy-bar').style.width = energy + '%';
+    document.getElementById('energy-val').textContent = energy;
+  }
+}
+
+// xp bar
+function updateXP(progress, levelled_up, level) {
+  document.getElementById('xp-bar').style.width = progress + '%';
+  if (levelled_up) {
+    document.querySelector('.level-badge').textContent = 'Lv.' + level;
+    showLevelUp();
+  }
+}
+
+function showLevelUp() {
+  const toast = document.getElementById('levelup-toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// TTS
+function speak(text) {
+  const sprite = document.getElementById('pet-sprite');
+  sprite.classList.add('speaking');
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1.05; utter.pitch = 1.3;
+  utter.onend = () => sprite.classList.remove('speaking');
+  window.speechSynthesis.speak(utter);
+}
+
+// chat
+function addMessage(text, who) {
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + (who === 'pet' ? 'pet-msg' : 'user-msg');
+  div.textContent = text;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+async function sendMessage(text) {
+  if (!text.trim()) return;
+  addMessage(text, 'user');
+  document.getElementById('chat-input').value = '';
+  const res = await fetch('/pet/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({message: text, emotion: currentEmotion})
+  });
+  const data = await res.json();
+  addMessage(data.response, 'pet');
+  document.getElementById('bubble-text').textContent = data.response;
+  speak(data.response);
+  updatePetSprite(data.pet_state);
+  document.getElementById('state-badge').textContent = data.pet_state;
+  currentState = data.pet_state;
+  updateXP(data.xp_progress, data.levelled_up, data.level);
+}
+
+document.getElementById('send-btn').addEventListener('click', () =>
+  sendMessage(document.getElementById('chat-input').value));
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage(e.target.value);
+});
+
+// STT
+const micBtn = document.getElementById('mic-btn');
+let recognition = null;
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.onresult = e => sendMessage(e.results[0][0].transcript);
+  recognition.onend = () => micBtn.textContent = '🎤';
+}
+micBtn.addEventListener('click', () => {
+  if (!recognition) return;
+  micBtn.textContent = '🔴';
+  recognition.start();
+});
+
+// activities
+async function doActivity(action) {
+  const res = await fetch('/pet/activity', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action})
+  });
+  const data = await res.json();
+  addMessage(data.response, 'pet');
+  document.getElementById('bubble-text').textContent = data.response;
+  speak(data.response);
+  updatePetSprite(data.pet_state);
+  document.getElementById('state-badge').textContent = data.pet_state;
+  currentState = data.pet_state;
+  updateStats(data.hunger, data.mood, data.energy);
+  updateXP(data.xp_progress, false, data.level);
+}
+document.getElementById('feed-btn').addEventListener('click', () => doActivity('feed'));
+document.getElementById('play-btn').addEventListener('click', () => doActivity('play'));
+document.getElementById('rest-btn').addEventListener('click', () => doActivity('rest'));
+
+// theme toggle
+document.getElementById('theme-toggle-btn').addEventListener('click', async () => {
+  const newTheme = currentTheme === 'normal' ? 'cozy' : 'normal';
+  await fetch('/pet/theme', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({theme: newTheme})
+  });
+  currentTheme = newTheme;
+  document.body.classList.toggle('theme-cozy', newTheme === 'cozy');
+  document.getElementById('theme-toggle-btn').textContent =
+    newTheme === 'cozy' ? '🌙 Normal' : '🌸 Cozy';
+});
+
+// rename
+document.getElementById('rename-btn').addEventListener('click', async () => {
+  const name = prompt('Give your pet a new name:');
+  if (!name || !name.trim()) return;
+  const res = await fetch('/pet/rename', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name: name.trim()})
+  });
+  const data = await res.json();
+  if (data.success) document.getElementById('pet-name-display').textContent = data.name;
+});
+</script>
+{% endblock %}

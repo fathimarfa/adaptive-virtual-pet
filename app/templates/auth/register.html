@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="auth-card" id="auth-card">
+  <h1>Create account</h1>
+  <p class="subtitle">We'll save your face to log you in next time.</p>
+
+  <input id="username" type="text" placeholder="Choose a username" autocomplete="off"/>
+  <input id="pin" type="password" placeholder="PIN (optional fallback login)"/>
+
+  <div class="cam-wrap">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none"></canvas>
+    <div id="preview-wrap" style="display:none">
+      <img id="preview" alt="captured face"/>
+      <button class="btn-secondary" id="retake">Retake</button>
+    </div>
+  </div>
+  <button class="btn-primary" id="capture-btn">📸 Capture face</button>
+  <button class="btn-primary" id="register-btn" style="display:none">Register →</button>
+
+  <!-- theme picker -->
+  <p class="subtitle" style="margin-top:0.5rem">Choose your theme</p>
+  <div class="theme-picker">
+    <div class="theme-option selected" data-theme="normal" id="theme-normal">
+      <div class="theme-preview normal-preview"></div>
+      <span>Normal</span>
+      <small>Dark & purple</small>
+    </div>
+    <div class="theme-option" data-theme="cozy" id="theme-cozy">
+      <div class="theme-preview cozy-preview"></div>
+      <span>Cozy ✨</span>
+      <small>Beige & peach</small>
+    </div>
+  </div>
+
+  <p id="msg" class="msg"></p>
+  <p style="font-size:0.85rem;text-align:center">Already have an account? <a href="/auth/login">Login</a></p>
+</div>
+
+<script>
+let capturedImage = null;
+let selectedTheme = 'normal';
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const preview = document.getElementById('preview');
+
+navigator.mediaDevices.getUserMedia({ video: true }).then(s => video.srcObject = s);
+
+// theme selection
+document.querySelectorAll('.theme-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    selectedTheme = opt.dataset.theme;
+    document.body.className = selectedTheme === 'cozy' ? 'theme-cozy' : '';
+  });
+});
+
+document.getElementById('capture-btn').addEventListener('click', () => {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  capturedImage = canvas.toDataURL('image/jpeg');
+  preview.src = capturedImage;
+  document.getElementById('preview-wrap').style.display = 'block';
+  video.style.display = 'none';
+  document.getElementById('capture-btn').style.display = 'none';
+  document.getElementById('register-btn').style.display = 'block';
+});
+
+document.getElementById('retake').addEventListener('click', () => {
+  capturedImage = null;
+  document.getElementById('preview-wrap').style.display = 'none';
+  video.style.display = 'block';
+  document.getElementById('capture-btn').style.display = 'block';
+  document.getElementById('register-btn').style.display = 'none';
+});
+
+document.getElementById('register-btn').addEventListener('click', async () => {
+  const username = document.getElementById('username').value.trim();
+  const pin = document.getElementById('pin').value.trim();
+  const msg = document.getElementById('msg');
+  if (!username) { msg.textContent = 'Please enter a username.'; return; }
+  if (!capturedImage) { msg.textContent = 'Please capture your face first.'; return; }
+  msg.textContent = 'Registering...';
+  const res = await fetch('/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, pin, image: capturedImage, theme: selectedTheme })
+  });
+  const data = await res.json();
+  if (data.success) {
+    msg.textContent = 'Registered! Redirecting...';
+    setTimeout(() => window.location.href = '/auth/login', 1200);
+  } else {
+    msg.textContent = data.message;
+  }
+});
+</script>
+{% endblock %}

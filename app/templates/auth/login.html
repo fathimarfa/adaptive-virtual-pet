@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Welcome back</h1>
+  <p class="subtitle">Look at the camera to log in.</p>
+
+  <div class="cam-wrap">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none"></canvas>
+  </div>
+
+  <button class="btn-primary" id="scan-btn">Scan Your Face</button>
+  <p id="msg" class="msg"></p>
+
+  <hr/>
+  <p class="subtitle">Or use PIN fallback</p>
+  <input id="pin-username" type="text" placeholder="Username"/>
+  <input id="pin-input" type="password" placeholder="PIN"/>
+  <button class="btn-secondary" id="pin-btn">Login with PIN</button>
+
+  <p style="margin-top:1rem;font-size:0.9rem">
+    No account? <a href="/auth/register">Register here</a>
+  </p>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const msg = document.getElementById('msg');
+
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(s => video.srcObject = s);
+
+async function tryLogin(payload, endpoint) {
+  msg.textContent = 'Checking...';
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (data.success) {
+    msg.textContent = '✓ Recognised! Loading your pet...';
+    setTimeout(() => window.location.href = '/pet/', 1200);
+  } else {
+    msg.textContent = data.message;
+  }
+}
+
+document.getElementById('scan-btn').addEventListener('click', () => {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const image = canvas.toDataURL('image/jpeg');
+  tryLogin({ image }, '/auth/login/face');
+});
+
+document.getElementById('pin-btn').addEventListener('click', () => {
+  const username = document.getElementById('pin-username').value.trim();
+  const pin = document.getElementById('pin-input').value.trim();
+  if (!username || !pin) { msg.textContent = 'Enter username and PIN.'; return; }
+  tryLogin({ username, pin }, '/auth/login/pin');
+});
+</script>
+{% endblock %}

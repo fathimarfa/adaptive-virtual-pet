@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.db
+.env
+instance/
+app/static/faces/
+tmp_emotion.jpg
+*.jpg
+.pytest_cache/
+dist/
+build/
+*.egg-info/
